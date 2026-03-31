@@ -1,0 +1,33 @@
+name: Ejecucion Mensual BCE
+
+on:
+  schedule:
+    # Se ejecuta a las 00:00 del día 1 de cada mes
+    - cron: '0 0 1 * *'
+  workflow_dispatch: # Esto permite que tú le des a un botón para probarlo ahora
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v3
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Instalar librerias
+        run: pip install -r requirements.txt
+
+      - name: Ejecutar script
+        run: python script.py
+
+      - name: Guardar cambios en el repo
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add historico_usd.csv
+          git commit -m "Actualizacion automatica: $(date)" || echo "No hay cambios"
+          git push
