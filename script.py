@@ -1,20 +1,30 @@
-name: Extraer Datos BCE
-on:
-  schedule:
-    # Se ejecuta a las 00:00 del día 1 de cada mes
-    - cron: '0 0 1 * *'
-  workflow_dispatch: # Permite ejecutarlo manualmente si quieres
+import pandas as pd
+import io
+import requests
+import zipfile
+import os
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Configurar Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-      - name: Instalar dependencias
-        run: pip install pandas requests
-      - name: Ejecutar script
-        run: python tu_script.py
+def extraer_datos():
+    url = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.zip"
+    r = requests.get(url)
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    df = pd.read_csv(z.open('eurofxref-hist.csv'))
+
+    df['Date'] = pd.to_datetime(df['Date'])
+    df = df[['Date', 'USD']].dropna()
+    df['weekday'] = df['Date'].dt.weekday
+
+    # Filtrar miércoles (2) y agrupar por mes
+    miercoles = df[df['weekday'] == 2].copy()
+    miercoles['year'] = miercoles['Date'].dt.year
+    miercoles['month'] = miercoles['Date'].dt.month
+
+    # Obtener el penúltimo de cada mes
+    resultado = miercoles.sort_values('Date').groupby(['year', 'month']).nth(-2)
+
+    # Guardar a un archivo CSV
+    resultado[['Date', 'USD']].to_csv("historico_usd.csv", index=False)
+    print("Archivo actualizado con éxito.")
+
+if __name__ == "__main__":
+    extraer_datos()
