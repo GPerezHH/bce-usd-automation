@@ -8,9 +8,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Añadimos esto explícitamente para asegurar permisos
     permissions:
       contents: write
+    # Esta línea de abajo fuerza el uso de Node 24 y quita el aviso
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+      # ... el resto sigue igual ...
+
 
     steps:
       - name: Descargar codigo
